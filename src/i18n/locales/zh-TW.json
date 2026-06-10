@@ -2735,6 +2735,28 @@
     "suggestedDefaults": "套用建議預設設定",
     "suggestedDefaultsHint": "使用此預設推薦的預設模型設定"
   },
+  "privacyFilter": {
+    "title": "隱私過濾",
+    "description": "在 AI 請求傳送前自動過濾敏感資訊（PII、金鑰等）",
+    "enableLabel": "啟用隱私過濾",
+    "enableDescription": "自動過濾電子郵件、電話號碼、身分證、銀行卡、API 金鑰等敏感資訊",
+    "portLabel": "服務埠號",
+    "portDescription": "隱私過濾服務監聽埠號（預設 18088）",
+    "statusRunning": "執行中",
+    "statusStopped": "已停止",
+    "statusUnhealthy": "服務異常",
+    "saveSuccess": "隱私過濾設定已儲存",
+    "saveFailed": "儲存失敗",
+    "testTitle": "測試過濾功能",
+    "testDescription": "輸入包含敏感資訊的文字，檢視過濾效果",
+    "testInputLabel": "測試文字",
+    "testInputPlaceholder": "例如：我的電子郵件是 example@test.com，電話號碼是 13800138000",
+    "testButton": "測試過濾",
+    "testResultLabel": "過濾結果",
+    "testSuccess": "過濾測試完成",
+    "testFailed": "測試失敗",
+    "testTextEmpty": "請輸入測試文字"
+  },
   "subscription": {
     "title": "訂閱額度",
     "fiveHour": "5 小時",

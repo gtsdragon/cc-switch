@@ -65,6 +65,8 @@ pub struct RequestContext {
     pub optimizer_config: OptimizerConfig,
     /// Copilot 优化器配置
     pub copilot_optimizer_config: CopilotOptimizerConfig,
+    /// 是否启用隐私过滤
+    pub privacy_filter_enabled: bool,
 }
 
 impl RequestContext {
@@ -101,6 +103,12 @@ impl RequestContext {
         let rectifier_config = state.db.get_rectifier_config().unwrap_or_default();
         let optimizer_config = state.db.get_optimizer_config().unwrap_or_default();
         let copilot_optimizer_config = state.db.get_copilot_optimizer_config().unwrap_or_default();
+
+        // 从数据库读取隐私过滤配置
+        let privacy_filter_enabled = state
+            .db
+            .get_bool_flag("privacy_filter_enabled")
+            .unwrap_or(false);
 
         let current_provider_id =
             crate::settings::get_current_provider(&app_type).unwrap_or_default();
@@ -167,6 +175,7 @@ impl RequestContext {
             rectifier_config,
             optimizer_config,
             copilot_optimizer_config,
+            privacy_filter_enabled,
         })
     }
 

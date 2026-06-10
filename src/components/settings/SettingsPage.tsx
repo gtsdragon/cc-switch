@@ -45,6 +45,7 @@ import { UsageDashboard } from "@/components/usage/UsageDashboard";
 import { LogConfigPanel } from "@/components/settings/LogConfigPanel";
 import { AuthCenterPanel } from "@/components/settings/AuthCenterPanel";
 import { CodexAuthSettings } from "@/components/settings/CodexAuthSettings";
+import { PrivacyFilterSettings } from "@/components/settings/PrivacyFilterSettings";
 import { useInstalledSkills } from "@/hooks/useSkills";
 import { useSettings } from "@/hooks/useSettings";
 import { useImportExport } from "@/hooks/useImportExport";
@@ -195,11 +196,14 @@ export function SettingsPage({
           onValueChange={setActiveTab}
           className="flex flex-col h-full"
         >
-          <TabsList className="grid w-full grid-cols-6 mb-6 glass rounded-lg">
+          <TabsList className="grid w-full grid-cols-7 mb-6 glass rounded-lg">
             <TabsTrigger value="general">
               {t("settings.tabGeneral")}
             </TabsTrigger>
             <TabsTrigger value="proxy">{t("settings.tabProxy")}</TabsTrigger>
+            <TabsTrigger value="privacy">
+              {t("settings.tabPrivacy", { defaultValue: "隐私" })}
+            </TabsTrigger>
             <TabsTrigger value="auth">
               {t("settings.tabAuth", { defaultValue: "认证" })}
             </TabsTrigger>
@@ -267,6 +271,17 @@ export function SettingsPage({
                     onAutoSave={handleAutoSave}
                   />
                 ) : null}
+              </TabsContent>
+
+              <TabsContent value="privacy" className="space-y-6 mt-0 pb-4">
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="space-y-6"
+                >
+                  <PrivacyFilterSettings />
+                </motion.div>
               </TabsContent>
 
               <TabsContent value="auth" className="space-y-6 mt-0 pb-4">

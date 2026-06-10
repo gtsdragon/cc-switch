@@ -331,14 +331,6 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
 
   const [testing, setTesting] = useState(false);
 
-  // {{apiKey}}/{{baseUrl}} 实际注入值，镜像后端 resolve_script_credentials 的
-  // 优先级：脚本配置中的显式非空值优先（旧配置可能携带），否则回退供应商凭据。
-  const effectiveScriptCredentials = {
-    apiKey: script.apiKey?.trim() || providerCredentials.apiKey,
-    baseUrl:
-      script.baseUrl?.trim().replace(/\/+$/, "") || providerCredentials.baseUrl,
-  };
-
   // 🔧 失焦时的验证（严格）- 仅确保有效整数
   const validateTimeout = (value: string): number => {
     const num = Number(value);
@@ -686,12 +678,13 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
     const preset = PRESET_TEMPLATES[presetName];
     if (preset !== undefined) {
       if (presetName === TEMPLATE_TYPES.CUSTOM) {
-        // 自定义模板没有凭证输入框：清空显式覆盖值后，测试与真实查询
-        // 都会在后端回退到供应商配置（Provider::resolve_usage_credentials），
-        // 与下方“支持的变量”区域展示的 {{apiKey}}/{{baseUrl}} 取值一致。
+        // 🔧 自定义模式：用户应该在脚本中直接写完整 URL 和凭证，而不是依赖变量替换
+        // 这样可以避免同源检查导致的问题
+        // 如果用户想使用变量，需要手动在配置中设置 baseUrl/apiKey
         setScript({
           ...script,
           code: preset,
+          // 清除凭证，用户可选择手动输入或保持空
           apiKey: undefined,
           baseUrl: undefined,
           accessToken: undefined,
@@ -893,9 +886,9 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
                       {"{{baseUrl}}"}
                     </code>
                     <span className="text-muted-foreground/50">=</span>
-                    {effectiveScriptCredentials.baseUrl ? (
+                    {providerCredentials.baseUrl ? (
                       <code className="text-foreground/70 break-all font-mono">
-                        {effectiveScriptCredentials.baseUrl}
+                        {providerCredentials.baseUrl}
                       </code>
                     ) : (
                       <span className="text-muted-foreground/50 italic">
@@ -910,11 +903,11 @@ const UsageScriptModal: React.FC<UsageScriptModalProps> = ({
                       {"{{apiKey}}"}
                     </code>
                     <span className="text-muted-foreground/50">=</span>
-                    {effectiveScriptCredentials.apiKey ? (
+                    {providerCredentials.apiKey ? (
                       <>
                         {showApiKey ? (
                           <code className="text-foreground/70 break-all font-mono">
-                            {effectiveScriptCredentials.apiKey}
+                            {providerCredentials.apiKey}
                           </code>
                         ) : (
                           <code className="text-foreground/70 font-mono">
