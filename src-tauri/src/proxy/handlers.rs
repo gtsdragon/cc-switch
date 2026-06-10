@@ -177,6 +177,13 @@ async fn handle_messages_for_app(
     let mut ctx =
         RequestContext::new(&state, &body, &headers, app_type.clone(), tag, app_type_str).await?;
 
+    // 隐私过滤：如果启用，过滤请求体中的敏感信息（失败时内部降级为原文转发）
+    let body = if ctx.privacy_filter_enabled {
+        crate::proxy::privacy_filter::filter_sensitive_data(&state, body, tag).await
+    } else {
+        body
+    };
+
     let raw_endpoint = uri
         .path_and_query()
         .map(|path_and_query| path_and_query.as_str())
@@ -717,6 +724,13 @@ pub async fn handle_chat_completions(
         RequestContext::new(&state, &body, &headers, AppType::Codex, "Codex", "codex").await?;
     let endpoint = endpoint_with_query(&uri, "/chat/completions");
 
+    // 隐私过滤：如果启用，过滤请求体中的敏感信息（失败时内部降级为原文转发）
+    let body = if ctx.privacy_filter_enabled {
+        crate::proxy::privacy_filter::filter_sensitive_data(&state, body, "Codex").await
+    } else {
+        body
+    };
+
     let is_stream = body
         .get("stream")
         .and_then(|v| v.as_bool())
@@ -806,6 +820,13 @@ async fn handle_responses_for_app(
     let mut ctx =
         RequestContext::new(&state, &body, &headers, app_type.clone(), tag, app_type_str).await?;
     let endpoint = endpoint_with_query(&uri, "/responses");
+
+    // 隐私过滤：如果启用，过滤请求体中的敏感信息（失败时内部降级为原文转发）
+    let body = if ctx.privacy_filter_enabled {
+        crate::proxy::privacy_filter::filter_sensitive_data(&state, body, "Codex").await
+    } else {
+        body
+    };
 
     let is_stream = body
         .get("stream")
@@ -943,6 +964,13 @@ async fn handle_responses_compact_for_app(
     let mut ctx =
         RequestContext::new(&state, &body, &headers, app_type.clone(), tag, app_type_str).await?;
     let endpoint = endpoint_with_query(&uri, "/responses/compact");
+
+    // 隐私过滤：如果启用，过滤请求体中的敏感信息（失败时内部降级为原文转发）
+    let body = if ctx.privacy_filter_enabled {
+        crate::proxy::privacy_filter::filter_sensitive_data(&state, body, "Codex").await
+    } else {
+        body
+    };
 
     let is_stream = body
         .get("stream")
@@ -1947,6 +1975,13 @@ pub async fn handle_gemini(
     let mut ctx = RequestContext::new(&state, &body, &headers, AppType::Gemini, "Gemini", "gemini")
         .await?
         .with_model_from_uri(&uri);
+
+    // 隐私过滤：如果启用，过滤请求体中的敏感信息（失败时内部降级为原文转发）
+    let body = if ctx.privacy_filter_enabled {
+        crate::proxy::privacy_filter::filter_sensitive_data(&state, body, "Gemini").await
+    } else {
+        body
+    };
 
     // 提取完整的路径和查询参数
     let endpoint = uri

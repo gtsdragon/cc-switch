@@ -25,6 +25,7 @@ mod model_capabilities;
 mod openclaw_config;
 mod opencode_config;
 mod panic_hook;
+mod privacy_filter;
 mod prompt;
 mod prompt_files;
 mod provider;
@@ -1129,6 +1130,42 @@ pub fn run() {
                 log::info!("✓ XaiOAuthManager initialized");
             }
 
+            // 初始化 PrivacyFilterService
+            {
+                use commands::PrivacyFilterState;
+                let privacy_filter_state = PrivacyFilterState::new();
+                app.manage(privacy_filter_state);
+                log::info!("✓ PrivacyFilterState initialized");
+
+                // 如果配置中启用了隐私过滤，自动启动服务
+                let db = &app.state::<AppState>().db;
+                if let Ok(true) = db.get_bool_flag("privacy_filter_enabled") {
+                    let handle = app.handle().clone();
+
+                    tauri::async_runtime::spawn(async move {
+                        use tauri::Manager;
+                        let state = handle.state::<PrivacyFilterState>();
+                        let app_state = handle.state::<AppState>();
+                        let resource_dir = handle.path().resource_dir().ok();
+
+                        match commands::start_service_internal(
+                            &state,
+                            app_state.db.as_ref(),
+                            resource_dir,
+                        )
+                        .await
+                        {
+                            Ok(()) => {
+                                log::info!("✓ Privacy filter service auto-started");
+                            }
+                            Err(e) => {
+                                log::warn!("Failed to auto-start privacy filter service: {}", e);
+                            }
+                        }
+                    });
+                }
+            }
+
             // 初始化全局出站代理 HTTP 客户端
             {
                 let db = &app.state::<AppState>().db;
@@ -1647,6 +1684,13 @@ pub fn run() {
             commands::enter_lightweight_mode,
             commands::exit_lightweight_mode,
             commands::is_lightweight_mode,
+            // Privacy filter commands
+            commands::start_privacy_filter_service,
+            commands::stop_privacy_filter_service,
+            commands::get_privacy_filter_status,
+            commands::test_privacy_filter,
+            commands::get_privacy_filter_config,
+            commands::set_privacy_filter_config,
         ]);
 
     let app = builder
@@ -1815,6 +1859,14 @@ pub fn run() {
 /// 确保 Claude Code/Codex/Gemini 的配置不会处于损坏状态。
 /// 使用 stop_with_restore_keep_state 保留 settings 表中的代理状态，下次启动时自动恢复。
 pub async fn cleanup_before_exit(app_handle: &tauri::AppHandle) {
+    // 停止隐私过滤子进程（std::process::exit 不走 Drop，必须显式清理，
+    // 否则 privacy-filter 进程会在应用退出后残留）
+    if let Some(pf_state) = app_handle.try_state::<commands::PrivacyFilterState>() {
+        if let Err(e) = commands::stop_service_internal(&pf_state).await {
+            log::warn!("退出时停止隐私过滤服务失败: {e}");
+        }
+    }
+
     if let Some(state) = app_handle.try_state::<store::AppState>() {
         let proxy_service = &state.proxy_service;
 

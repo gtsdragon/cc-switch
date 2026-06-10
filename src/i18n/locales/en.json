@@ -323,6 +323,7 @@
     "general": "General",
     "tabGeneral": "General",
     "tabAuth": "Auth",
+    "tabPrivacy": "Privacy",
     "tabAdvanced": "Advanced",
     "tabProxy": "Routing",
     "authCenter": {
@@ -3006,6 +3007,28 @@
     },
     "suggestedDefaults": "Apply Suggested Defaults",
     "suggestedDefaultsHint": "Use this preset's recommended default model configuration"
+  },
+  "privacyFilter": {
+    "title": "Privacy Filter",
+    "description": "Automatically filter sensitive information (PII, keys, etc.) before sending AI requests",
+    "enableLabel": "Enable Privacy Filter",
+    "enableDescription": "Automatically filter emails, phone numbers, ID numbers, bank cards, API keys, etc.",
+    "portLabel": "Service Port",
+    "portDescription": "Privacy filter service listening port (default: 18088)",
+    "statusRunning": "Running",
+    "statusStopped": "Stopped",
+    "statusUnhealthy": "Unhealthy",
+    "saveSuccess": "Privacy filter config saved",
+    "saveFailed": "Failed to save",
+    "testTitle": "Test Filter",
+    "testDescription": "Enter text with sensitive information to see the filtering effect",
+    "testInputLabel": "Test Text",
+    "testInputPlaceholder": "e.g., My email is example@test.com and phone is 13800138000",
+    "testButton": "Test Filter",
+    "testResultLabel": "Filtered Result",
+    "testSuccess": "Filter test completed",
+    "testFailed": "Test failed",
+    "testTextEmpty": "Please enter test text"
   },
   "subscription": {
     "title": "Subscription Quota",

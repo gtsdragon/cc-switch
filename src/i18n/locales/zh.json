@@ -323,6 +323,7 @@
     "general": "通用",
     "tabGeneral": "通用",
     "tabAuth": "认证",
+    "tabPrivacy": "隐私",
     "tabAdvanced": "高级",
     "tabProxy": "路由",
     "authCenter": {
@@ -3006,6 +3007,28 @@
     },
     "suggestedDefaults": "应用建议默认配置",
     "suggestedDefaultsHint": "使用此预设推荐的默认模型配置"
+  },
+  "privacyFilter": {
+    "title": "隐私过滤",
+    "description": "在 AI 请求发送前自动过滤敏感信息（PII、密钥等）",
+    "enableLabel": "启用隐私过滤",
+    "enableDescription": "自动过滤邮箱、手机号、身份证、银行卡、API 密钥等敏感信息",
+    "portLabel": "服务端口",
+    "portDescription": "隐私过滤服务监听端口（默认 18088）",
+    "statusRunning": "运行中",
+    "statusStopped": "已停止",
+    "statusUnhealthy": "服务异常",
+    "saveSuccess": "隐私过滤配置已保存",
+    "saveFailed": "保存失败",
+    "testTitle": "测试过滤功能",
+    "testDescription": "输入包含敏感信息的文本，查看过滤效果",
+    "testInputLabel": "测试文本",
+    "testInputPlaceholder": "例如：我的邮箱是 example@test.com，手机号是 13800138000",
+    "testButton": "测试过滤",
+    "testResultLabel": "过滤结果",
+    "testSuccess": "过滤测试完成",
+    "testFailed": "测试失败",
+    "testTextEmpty": "请输入测试文本"
   },
   "subscription": {
     "title": "订阅额度",

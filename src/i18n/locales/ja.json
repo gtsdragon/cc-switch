@@ -323,6 +323,7 @@
     "general": "一般",
     "tabGeneral": "一般",
     "tabAuth": "認証",
+    "tabPrivacy": "プライバシー",
     "tabAdvanced": "詳細",
     "tabProxy": "ルーティング",
     "authCenter": {
@@ -3006,6 +3007,28 @@
     },
     "suggestedDefaults": "推奨デフォルト設定を適用",
     "suggestedDefaultsHint": "このプリセットの推奨デフォルトモデル設定を使用します"
+  },
+  "privacyFilter": {
+    "title": "プライバシーフィルター",
+    "description": "AIリクエスト送信前に機密情報（PII、キーなど）を自動的にフィルタリング",
+    "enableLabel": "プライバシーフィルターを有効化",
+    "enableDescription": "メール、電話番号、IDカード、銀行カード、APIキーなどを自動的にフィルタリング",
+    "portLabel": "サービスポート",
+    "portDescription": "プライバシーフィルターサービスのリスニングポート（デフォルト：18088）",
+    "statusRunning": "実行中",
+    "statusStopped": "停止",
+    "statusUnhealthy": "異常",
+    "saveSuccess": "プライバシーフィルター設定を保存しました",
+    "saveFailed": "保存に失敗しました",
+    "testTitle": "フィルターテスト",
+    "testDescription": "機密情報を含むテキストを入力してフィルタリング効果を確認",
+    "testInputLabel": "テストテキスト",
+    "testInputPlaceholder": "例：私のメールはexample@test.comで、電話番号は13800138000です",
+    "testButton": "フィルターテスト",
+    "testResultLabel": "フィルタリング結果",
+    "testSuccess": "フィルターテスト完了",
+    "testFailed": "テストに失敗しました",
+    "testTextEmpty": "テストテキストを入力してください"
   },
   "subscription": {
     "title": "サブスクリプションクォータ",
