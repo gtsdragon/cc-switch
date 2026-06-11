@@ -1,3 +1,7 @@
+## 致谢
+
+- [Linux.do](https://linux.do)
+
 # CC Switch ユーザーマニュアル
 
 > Claude Code / Claude Desktop / Codex / Gemini CLI / OpenCode / OpenClaw / Hermes オールインワンアシスタント

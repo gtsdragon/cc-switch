@@ -1,3 +1,7 @@
+## 致谢
+
+- [Linux.do](https://linux.do)
+
 <div align="center">
 
 # CC Switch
