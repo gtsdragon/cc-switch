@@ -13,7 +13,7 @@ AI CLI 工具 → CC Switch 代理 → [隐私过滤] → 上游 API
             (HTTP 服务，由 CC Switch 自动管理)
 ```
 
-- 过滤引擎来自 [privacy-filter](https://github.com/your-org/privacy-filter) 项目
+- 过滤引擎来自 [packyme/privacy-filter](https://github.com/packyme/privacy-filter) 项目
   （Go 实现：正则 PII 检测 + gitleaks 规则集密钥检测 + 高熵兜底），
   以独立子进程方式随 CC Switch 启动/停止。
 - 启用后，代理在转发前提取请求体中的文本字段，批量调用本地过滤服务，
