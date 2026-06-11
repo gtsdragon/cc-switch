@@ -3,10 +3,11 @@
 ## 致谢
 
 - [Linux.do](https://linux.do)
+- [packyme/privacy-filter](https://github.com/packyme/privacy-filter) —— 提供本地隐私过滤引擎
 
 ---
 
-基于 [cc-switch](https://github.com/farion1231/cc-switch) 的修改版，新增**本地隐私过滤**能力：在代理转发请求到上游 API 之前，自动检测并脱敏请求中的敏感信息（PII 与密钥）。全部处理在本机完成，不依赖任何外部服务。
+基于 [cc-switch](https://github.com/farion1231/cc-switch) 的修改版，新增**本地隐私过滤**能力：在代理转发请求到上游 API 之前，自动检测并脱敏请求中的敏感信息（PII 与密钥）。过滤引擎来自 [packyme/privacy-filter](https://github.com/packyme/privacy-filter)，全部处理在本机完成，不依赖任何外部服务。
 
 ## 下载
 
