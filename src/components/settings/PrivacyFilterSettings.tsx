@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import {
   privacyFilterApi,
@@ -32,6 +32,8 @@ export function PrivacyFilterSettings() {
   const [testText, setTestText] = useState("");
   const [testResult, setTestResult] = useState("");
   const [testing, setTesting] = useState(false);
+  // 标记本地是否已修改过配置（避免重挂载时被后端旧值覆盖）
+  const hasLocalEdits = useRef(false);
 
   // 加载配置和状态
   useEffect(() => {
@@ -44,7 +46,10 @@ export function PrivacyFilterSettings() {
   const loadConfig = async () => {
     try {
       const cfg = await privacyFilterApi.getConfig();
-      setConfig(cfg);
+      // 若用户在本组件内已修改过配置（未保存/正在测试），不再用后端旧值覆盖
+      if (!hasLocalEdits.current) {
+        setConfig(cfg);
+      }
     } catch (error) {
       console.error("Failed to load privacy filter config:", error);
     }
@@ -59,17 +64,25 @@ export function PrivacyFilterSettings() {
     }
   };
 
-  const handleSave = async () => {
+  const applyConfig = async (next: PrivacyFilterConfig) => {
+    hasLocalEdits.current = true;
+    setConfig(next);
     setLoading(true);
     try {
-      await privacyFilterApi.setConfig(config);
+      await privacyFilterApi.setConfig(next);
       toast.success(t("privacyFilter.saveSuccess"));
       await loadStatus();
     } catch (error) {
       toast.error(t("privacyFilter.saveFailed") + ": " + String(error));
+      // 保存失败时回读后端实际状态，避免 UI 显示与后端不一致
+      await loadConfig();
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleSave = async () => {
+    await applyConfig(config);
   };
 
   const handleTest = async () => {
@@ -148,8 +161,9 @@ export function PrivacyFilterSettings() {
             <Switch
               id="privacy-enabled"
               checked={config.enabled}
+              disabled={loading}
               onCheckedChange={(checked) =>
-                setConfig({ ...config, enabled: checked })
+                applyConfig({ ...config, enabled: checked })
               }
             />
           </div>

@@ -169,7 +169,15 @@ pub async fn set_privacy_filter_config(
 
     let db = app_state.db.as_ref();
 
-    // 保存配置到数据库
+    // 先尝试启停服务：启动/停止失败时直接返回，不落库，
+    // 保证 DB 中 enabled 状态与实际服务状态一致，避免 UI 读到失真的配置。
+    if config.enabled {
+        start_service_internal(&state, db, resource_dir(&app)).await?;
+    } else {
+        stop_service_internal(&state).await?;
+    }
+
+    // 服务状态就绪后再保存配置到数据库
     db.set_setting(
         "privacy_filter_enabled",
         if config.enabled { "true" } else { "false" },
@@ -178,13 +186,6 @@ pub async fn set_privacy_filter_config(
 
     db.set_setting("privacy_filter_port", &config.port.to_string())
         .map_err(|e| e.to_string())?;
-
-    // 启用则（重）启动服务，禁用则停止
-    if config.enabled {
-        start_service_internal(&state, db, resource_dir(&app)).await?;
-    } else {
-        stop_service_internal(&state).await?;
-    }
 
     log::info!(
         "[Command] Privacy filter config updated: enabled={}, port={}",
