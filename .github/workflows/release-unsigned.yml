@@ -67,7 +67,7 @@ jobs:
       - name: Build Windows package
         if: runner.os == 'Windows'
         shell: pwsh
-        run: pnpm tauri build --bundles msi --config src-tauri/unsigned-release.conf.json
+        run: pnpm tauri build --bundles nsis --config src-tauri/unsigned-release.conf.json
 
       - name: Collect macOS package
         if: runner.os == 'macOS'
@@ -89,9 +89,11 @@ jobs:
         run: |
           $ErrorActionPreference = 'Stop'
           New-Item -ItemType Directory -Force -Path release-assets | Out-Null
-          $msi = Get-ChildItem -Path src-tauri/target -Recurse -Filter *.msi | Select-Object -First 1
-          if ($null -eq $msi) { throw 'No Windows MSI was produced' }
-          Copy-Item $msi.FullName "release-assets/CC-Switch-$env:RELEASE_TAG-Windows-x64-unsigned.msi"
+          $installer = Get-ChildItem -Path src-tauri/target -Recurse -Filter *.exe |
+            Where-Object { $_.FullName -match '[\\/]bundle[\\/]nsis[\\/]' } |
+            Select-Object -First 1
+          if ($null -eq $installer) { throw 'No Windows NSIS installer was produced' }
+          Copy-Item $installer.FullName "release-assets/CC-Switch-$env:RELEASE_TAG-Windows-x64-unsigned-setup.exe"
 
       - name: Upload package artifact
         uses: actions/upload-artifact@v4
