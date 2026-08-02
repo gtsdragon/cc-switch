@@ -67,7 +67,7 @@ jobs:
       - name: Build Windows package
         if: runner.os == 'Windows'
         shell: pwsh
-        run: pnpm tauri build --target ${{ matrix.target }} --bundles msi --config src-tauri/unsigned-release.conf.json
+        run: pnpm tauri build --bundles msi --config src-tauri/unsigned-release.conf.json
 
       - name: Collect macOS package
         if: runner.os == 'macOS'
