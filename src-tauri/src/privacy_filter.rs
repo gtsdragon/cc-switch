@@ -30,6 +30,110 @@ use std::time::Duration;
 /// 默认监听端口（避免与 privacy-filter 默认的 8088 及常见服务冲突）
 pub const DEFAULT_PORT: u16 = 18088;
 
+/// 清理占用指定端口但已失管的 privacy-filter 子进程（孤儿进程）。
+///
+/// ## 背景
+/// app 异常退出时（崩溃、被强杀、断电，`cleanup_before_exit` 不执行），
+/// privacy-filter 子进程会残留并成为孤儿进程（父进程为 PID 1）继续占用端口。
+/// 之后每次 `start()` spawn 的新进程会因端口被占而绑定失败、立即退出；但
+/// `wait_until_healthy()` 的 HTTP 健康检查会命中 **旧孤儿进程** 的响应而误判
+/// "健康"，同时 `is_running()` 检查自己 spawn 的进程发现已死——UI 因此显示
+/// "已停止" 而脱敏其实仍由孤儿进程在提供，状态失真。
+///
+/// 因此在 spawn 前先探测端口占用，仅当占用者确实是残留的 privacy-filter
+/// 进程时将其终止，为本次启动让出端口。非 privacy-filter 的第三方占用不主动
+/// 杀死（避免误伤），交由后续启动失败路径报错处理。
+fn cleanup_orphaned_on_port(port: u16) {
+    for pid in pids_listening_on_port(port) {
+        if pid_is_privacy_filter(pid) {
+            log::warn!(
+                "[PrivacyFilter] Killing orphaned privacy-filter process (PID {}) occupying port {}",
+                pid,
+                port
+            );
+            #[cfg(target_os = "windows")]
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/PID", &pid.to_string()])
+                .status();
+            #[cfg(not(target_os = "windows"))]
+            let _ = std::process::Command::new("kill")
+                .args(["-9", &pid.to_string()])
+                .status();
+        }
+    }
+}
+
+/// 列出监听指定 TCP 端口的进程 PID。
+/// - macOS/Linux: `lsof -ti tcp:<port>`（仅含监听该端口的进程）
+/// - Windows: `netstat -ano` 解析得到
+fn pids_listening_on_port(port: u16) -> Vec<u32> {
+    #[cfg(target_os = "windows")]
+    {
+        let Ok(output) = std::process::Command::new("netstat")
+            .args(["-ano", "-p", "tcp"])
+            .output()
+        else {
+            return Vec::new();
+        };
+        let text = String::from_utf8_lossy(&output.stdout);
+        let wanted = format!(":{port}");
+        let mut pids = Vec::new();
+        for line in text.lines() {
+            // 形如:  TCP    0.0.0.0:18088  0.0.0.0:0  LISTENING  12345
+            if line.contains(&wanted) && line.contains("LISTENING") {
+                if let Some(pid) = line.split_whitespace().last() {
+                    if let Ok(p) = pid.parse::<u32>() {
+                        pids.push(p);
+                    }
+                }
+            }
+        }
+        pids
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        // lsof -ti tcp:<port> -sTCP:LISTEN  → 每行一个监听该端口的 PID
+        let Ok(output) = std::process::Command::new("lsof")
+            .args([
+                "-ti",
+                &format!("tcp:{port}"),
+                "-sTCP:LISTEN",
+            ])
+            .output()
+        else {
+            return Vec::new();
+        };
+        let text = String::from_utf8_lossy(&output.stdout);
+        text.lines()
+            .filter_map(|l| l.trim().parse::<u32>().ok())
+            .collect()
+    }
+}
+
+/// 判断指定 PID 的进程名是否属于 privacy-filter 二进制。
+#[cfg(target_os = "windows")]
+fn pid_is_privacy_filter(pid: u32) -> bool {
+    let Ok(out) = std::process::Command::new("tasklist")
+        .args(["/FI", &format!("PID eq {pid}"), "/FO", "CSV", "/NH"])
+        .output()
+    else {
+        return false;
+    };
+    String::from_utf8_lossy(&out.stdout).to_lowercase().contains("privacy-filter")
+}
+
+/// 判断指定 PID 的进程名是否属于 privacy-filter 二进制。
+#[cfg(not(target_os = "windows"))]
+fn pid_is_privacy_filter(pid: u32) -> bool {
+    let Ok(out) = std::process::Command::new("ps")
+        .args(["-p", &pid.to_string(), "-o", "comm="])
+        .output()
+    else {
+        return false;
+    };
+    String::from_utf8_lossy(&out.stdout).to_lowercase().contains("privacy-filter")
+}
+
 /// HTTP 客户端超时时间。
 /// localhost 往返通常 <5ms；放宽到 1s 以容忍大请求体（长对话历史可达数百 KB）。
 const REQUEST_TIMEOUT_MS: u64 = 1000;
@@ -220,6 +324,10 @@ impl PrivacyFilterService {
 
         let binary_path = self.get_binary_path()?;
 
+        // 清理上次异常退出残留的孤儿进程：它们仍占用端口，会让本次 spawn 的
+        // 新进程绑定失败而立即退出，但健康检查又命中旧孤儿进程造成"假健康"。
+        cleanup_orphaned_on_port(self.port);
+
         log::info!(
             "[PrivacyFilter] Starting service on port {} with binary: {}",
             self.port,
@@ -254,17 +362,20 @@ impl PrivacyFilterService {
     }
 
     /// 等待服务就绪（启动后轮询健康检查）
+    ///
+    /// 先确认自己 spawn 的子进程仍然存活，再做 HTTP 健康检查：若子进程已退出
+    /// （端口被第三方程序占用、二进制缺失等），直接失败而非被残留旧进程的响应误导。
     pub async fn wait_until_healthy(&self) -> Result<(), AppError> {
         for _ in 0..STARTUP_PROBE_ATTEMPTS {
-            if self.health_check().await {
-                log::info!("[PrivacyFilter] Service is healthy on port {}", self.port);
-                return Ok(());
-            }
             if !self.is_running() {
                 return Err(AppError::Config(format!(
                     "Privacy filter exited during startup (port {} may be in use)",
                     self.port
                 )));
+            }
+            if self.health_check().await {
+                log::info!("[PrivacyFilter] Service is healthy on port {}", self.port);
+                return Ok(());
             }
             tokio::time::sleep(Duration::from_millis(STARTUP_PROBE_INTERVAL_MS)).await;
         }
